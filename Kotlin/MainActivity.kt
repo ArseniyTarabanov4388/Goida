@@ -23,15 +23,12 @@ class MainActivity : ComponentActivity(), SensorEventListener {
     private var magnetometer: Sensor? = null
     private lateinit var matcher: CorrelationalMatcher
 
-    // Буфер на 7 точек (7 замеров * 0.5 м = 3.5 метра пройденного пути)
     private val windowSize = 7
     private val trajectoryBuffer = ArrayDeque<Double>(windowSize)
 
-    // Переменные для фильтрации частоты съёма данных по времени
     private var lastSampleTime = 0L
     private val sampleIntervalMs = 500L // Фиксируем замер не чаще, чем раз в 500 мс (~0.5 м ходьбы)
 
-    // Состояния UI для Compose
     private var currentYText by mutableStateOf("Пройдите первые ~3.5 м...")
     private var nearestDoorText by mutableStateOf("—")
     private var correlationText by mutableStateOf("—")
@@ -125,7 +122,6 @@ class MainActivity : ComponentActivity(), SensorEventListener {
         if (event?.sensor?.type == Sensor.TYPE_MAGNETIC_FIELD) {
             val currentTime = System.currentTimeMillis()
 
-            // Записываем значение магнитометра строго с интервалом sampleIntervalMs
             if (currentTime - lastSampleTime >= sampleIntervalMs) {
                 lastSampleTime = currentTime
 
@@ -136,13 +132,11 @@ class MainActivity : ComponentActivity(), SensorEventListener {
                 val bt = sqrt((bx * bx + by * by + bz * bz).toDouble())
                 rawBtText = String.format("%.1f µT", bt)
 
-                // Добавляем точку в скользящее окно
                 if (trajectoryBuffer.size >= windowSize) {
                     trajectoryBuffer.removeFirst()
                 }
                 trajectoryBuffer.addLast(bt)
 
-                // Когда накопилось 7 точек (прошли 3.5 метра) — пересчитываем позицию
                 if (trajectoryBuffer.size == windowSize) {
                     val currentTrajectory = trajectoryBuffer.toDoubleArray()
                     val result = matcher.findBestMatch(currentTrajectory)
